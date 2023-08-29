@@ -28,7 +28,7 @@ SECRET_KEY = get_random_secret_key()
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'story-scraper.vercel.app/'
+    'story-scraper.vercel.app'
 ]
 
 
