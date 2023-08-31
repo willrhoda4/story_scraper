@@ -7,12 +7,12 @@
 
 {
     "builds": [{
-                    "src": "poster_gopher/wsgi.py",
+                    "src": "story_scraper/wsgi.py",
                     "use": "@vercel/python"
               }],
 
     "routes": [{
                     "src": "/(.*)",
-                    "dest": "poster_gopher/wsgi.py"
+                    "dest": "story_scraper/wsgi.py"
               }]
 }
