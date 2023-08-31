@@ -13,7 +13,7 @@ import sys
 
 def main():
     """Run administrative tasks."""
-    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poster_gopher.settings")
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", "story_scraper.settings")
     try:
         from django.core.management import execute_from_command_line
     except ImportError as exc:

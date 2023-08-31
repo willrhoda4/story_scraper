@@ -28,7 +28,8 @@ SECRET_KEY = get_random_secret_key()
 DEBUG = True
 
 ALLOWED_HOSTS = [
-    'story-scraper.vercel.app'
+    'story-scraper.vercel.app',
+    '127.0.0.1'
 ]
 
 
@@ -62,7 +63,7 @@ CORS_ALLOWED_ORIGINS = [
     "https://caitlyngowriluk.com",
 ]
 
-ROOT_URLCONF = "poster_gopher.urls"
+ROOT_URLCONF = "story_scraper.urls"
 
 TEMPLATES = [
     {
@@ -80,7 +81,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "poster_gopher.wsgi.application"
+WSGI_APPLICATION = "story_scraper.wsgi.application"
 
 
 # Database

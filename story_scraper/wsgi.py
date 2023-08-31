@@ -1,5 +1,5 @@
 """
-WSGI config for poster_gopher project.
+WSGI config for story_scraper project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -11,7 +11,7 @@ import os
 
 from django.core.wsgi import get_wsgi_application
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "poster_gopher.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "story_scraper.settings")
 
 application = get_wsgi_application()
 app         = application
