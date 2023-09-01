@@ -9,15 +9,20 @@
 import re
 import json
 import requests
-
-from   django.views.decorators.csrf import csrf_exempt
-from   django.http                  import HttpResponse
-from   bs4                          import BeautifulSoup as bs
-
+from bs4 import BeautifulSoup
+from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 
 
-# HelloWorld left in place for testing purposes
+
+
+
+
+
+
+
+# HelloWorld left in place for testing purposes.
 @csrf_exempt
 def hello_world(request):
     return HttpResponse("Hello, World!")
@@ -25,89 +30,105 @@ def hello_world(request):
 
 
 
-# recieves a list of IMDB ids from client and scrapes
-# imdb.com for all the stunt credits associated with each id,
-# counts the  number of credits, deduplicates the list using set()
-# then returns the total amount and the list.
+
+
+
+
+# receives a url from client and scrapes CBC.ca for story data
+# facilitating the quick creation of a new article in the database.
 @csrf_exempt
-def getFlicks(request):
+def getArticle(request):
+
 
     try:
 
         data = json.loads(request.body)
-        team = data.get('team', []) 
-        print(f"Retrieving flicklist for the following team members:\n{team}\n")
+        url = data.get('url')
+        print(f"Scraping story data from \n{url}\n")
 
-        all_films = []
+        response = requests.get(url)
+        soup = BeautifulSoup(response.content, 'html.parser')
 
-        for member in team:
+        # extract headline, date, and image data
+        headline = soup.find('h1').text.strip()
+        time     = soup.find('time', class_='timeStamp')
+        date     = time['datetime'][:10]
 
-            # scrape html from member's fullcredits page
-            url        = f"https://www.imdb.com/name/{member}/fullcredits"
-            response   = requests.get(url)
-            soup       = bs(response.content, "html.parser")
-
-            # extract IMDB ids for films from CSS ids.
-            stunt_divs = soup.find_all("div", id=re.compile(r"stunts-tt\w+"))
-            film_ids   = [film["id"][7:] for film in stunt_divs]
-            all_films += film_ids
-            
-
-        # note total then deduplicate
-        total_credits  = len(all_films)
-        all_films      = list(set(all_films))
+        # extract image data
+        wrapper  = soup.find('figure', class_='leadmedia-story')
+        image    = wrapper.find('img')
+        alt      = image['alt'] if image else None
+        src      = image['src'] if image else None
 
 
-        return HttpResponse(json.dumps([total_credits, all_films]))
+        # Serialize the dictionary to JSON with ensure_ascii=False
+        # to prevent unicode characters from being escaped.
+        response_json = json.dumps([headline, date, src, alt], ensure_ascii=False)
+
+        return HttpResponse(response_json, content_type='application/json')
 
 
     except Exception as e:
-
-        print(f"An error occurred in the getFlicks view function: {str(e)}")
-        return HttpResponse("An error occurred gathering the flick list", status=400)
-
-    
-    
+        print(f"An error occurred in the getArticle view function: {str(e)}")
+        return HttpResponse("An error occurred gathering your story data", status=400)
+   
 
 
-    
-# receives the IMDB id for a film and checks
-# imdb.com for an associated title and poster url,
-# then ships back client. 
+
+
+
+
+
+# scrapes Caitlyn Gowriluk's CBC author page for story data
 @csrf_exempt
-def getPoster(request):
+def getNewStories(request):
+
 
     try:
 
-        data      = json.loads(request.body)
-        imdbId    = data.get('imdbId', [])
-        print(f"Trying to find data for this IMDB id: {imdbId}\n")
+        print(f"Checking CBC.ca for that new Caitlyn Gowriluk content...\n")
+       
+        # get existing article ids from client to prevent duplicates
+        existing_ids  = json.loads(request.body)
 
+        url           = "https://www.cbc.ca/news/canada/manitoba/author/caitlyn-gowriluk-1.4845371"
+        response      = requests.get(url)
+        soup          = BeautifulSoup(response.content, 'html.parser')
 
-        # headers and session stop IMDB from smelling a scraper. 
-        url        = f"https://www.imdb.com/title/{imdbId}/"
-        headers    = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
-        session    = requests.Session()
+        recentStories = soup.find("div", class_="contentListCards")
+        storyList     = recentStories.find_all("a", class_="card")
 
-        # go grab the json
-        response   = session.get(url, headers=headers)
-        film_soup  = bs(response.content, features="lxml")
-        film_json  = film_soup.find("script", type="application/ld+json")
+        
+        # extract story data iteratively
+        stories = []
+        for story in storyList:
 
-        if film_json:
+            data_content_id = story["data-contentid"]
 
-            # if there's no poster, send back 'no poster' in lieu of url,
-            # so the database knows not to look for it again during further searches.
-            json_dict = json.loads(film_json.string)
-            name      = json_dict.get( "name",  ""          )
-            image     = json_dict.get( "image", "no poster" )
-            
-            return HttpResponse(json.dumps([name, imdbId, image]))
+            if data_content_id in existing_ids: continue
 
-        # if there's no json, we got a problem.
-        else: return HttpResponse("An error occurred with your poster JSON", status=400)
+            img         = story.find("img")
+            src         = img["src"]
+            headline    = story.find("h3",  class_="headline"    ).text
+            description = story.find("div", class_="description" ).text
+            date        = story.find("time"                      )["datetime"]
+            link        = story["href"]
+            link        = "https://www.cbc.ca"+link if link[:18] != "https://www.cbc.ca" else link
+
+            stories.append({"article_id": data_content_id, "image": src, "headline": headline, "description": description, "link": link, "date": date })
+
+        # Serialize the list of dictionaries to JSON with ensure_ascii=False
+        # to prevent unicode characters from being escaped.
+        response_json = json.dumps(stories, ensure_ascii=False)
+
+        return HttpResponse(response_json, content_type='application/json')
 
     except Exception as e:
+            print(f"An error occurred in the getNewStories view function: {str(e)}")
+            return HttpResponse("An error occurred gathering your new story data", status=400)
 
-        print(f"An error occurred in the getPoster view function: {str(e)}")
-        return HttpResponse("An error occurred getting a poster", status=400)
+
+
+
+
+
