@@ -42,12 +42,13 @@ def getArticle(request):
 
     try:
 
-        data = json.loads(request.body)
-        url = data.get('url')
+        data    = json.loads(request.body)
+        url     = data.get('url')
+        
         print(f"Scraping story data from \n{url}\n")
 
         response = requests.get(url)
-        soup = BeautifulSoup(response.content, 'html.parser')
+        soup     = BeautifulSoup(response.content, 'html.parser')
 
         # extract headline, date, and image data
         headline = soup.find('h1').text.strip()
@@ -89,7 +90,7 @@ def getNewStories(request):
         print(f"Checking CBC.ca for that new Caitlyn Gowriluk content...\n")
        
         # get existing article ids from client to prevent duplicates
-        existing_ids  = json.loads(request.body)
+#        existing_ids  = json.loads(request.body)
 
         url           = "https://www.cbc.ca/news/canada/manitoba/author/caitlyn-gowriluk-1.4845371"
         response      = requests.get(url)
@@ -105,7 +106,7 @@ def getNewStories(request):
 
             data_content_id = story["data-contentid"]
 
-            if data_content_id in existing_ids: continue
+#            if data_content_id in existing_ids: continue
 
             img         = story.find("img")
             src         = img["src"]
