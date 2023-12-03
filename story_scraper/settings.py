@@ -63,7 +63,9 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
     "https://caitlyngowriluk.herokuapp.com",
+    "https://www.caitlyngowriluk.herokuapp.com",
     "https://caitlyngowriluk.com",
+    "https://www.caitlyngowriluk.com",
 ]
 
 ROOT_URLCONF = "story_scraper.urls"
